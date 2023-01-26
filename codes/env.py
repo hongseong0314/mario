@@ -16,7 +16,6 @@ class SkipFrame(gym.Wrapper):
         total_reward = 0.0
         done = False
         for i in range(self._skip):
-            # 포상을 누적하고 동일한 작업을 반복합니다.
             obs, reward, done, info = self.env.step(action)
             total_reward += reward
             if done:
