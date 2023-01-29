@@ -1,6 +1,14 @@
 import numpy as np
 import torch
 
+class GreedyStrategy():
+    def __init__(self):
+        pass
+    def select_action(self, model, state):
+        with torch.no_grad():
+            greedy_action = model(state).cpu().detach().data.numpy()
+        return greedy_action
+
 class EGreedyLinearStrategy():
     def __init__(self, init_epsilon=1.0, min_epsilon=0.001, decay_steps=20000):
         self.t = 0
