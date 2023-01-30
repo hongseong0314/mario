@@ -84,7 +84,7 @@ class AC():
 
     def setup(self):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.reward_history, self.logpas_history = [], []
+        self.reward_history, self.exploratory_history = [], []
 
         self.policy_model = self.policy_model_fn(self.nS, self.nA).to(self.device)
         self.policy_optimizer = self.policy_optimizer_fn(self.policy_model, 
@@ -97,13 +97,13 @@ class AC():
         self.epochs_completed = 0
         pass
 
-    def optimize_model(self, state, reward, next_state, action, done):
+    def optimize_model(self, state, reward, next_state, action, done, log_p):
         state = torch.from_numpy(state).to(self.device)
         reward = torch.tensor(reward).to(self.device)
         next_state = torch.from_numpy(next_state).to(self.device)
         done = torch.tensor(done).int().to(self.device)
 
-        _, _, log_p, entropy = self.policy_model.full_pass(state[np.newaxis, ...])
+        # _, _, log_p, entropy = self.policy_model.full_pass(state[np.newaxis, ...])
         q_s = self.critic_model(state[np.newaxis, ...])
         q_ss = self.critic_model(next_state[np.newaxis, ...])
 
@@ -119,20 +119,25 @@ class AC():
         self.policy_optimizer.zero_grad()
         policy_loss.backward() 
         self.policy_optimizer.step()
+
+        self.policy_loss.append(policy_loss.item())
+        self.critic_loss.append(critic_loss.item())
         
     def interaction_step(self, state):
         action, is_exploratory, logpa, _ = self.policy_model.full_pass(state)
-        return action
+        self.exploratory.append(is_exploratory)
+        return action, logpa
     
     def epoch(self, runing_bar):
-        self.rewards = []
+        self.rewards, self.exploratory = [], []
         state = self.env.reset().__array__()
+        self.policy_loss, self.critic_loss = [], []
         
         while True:
-            action = self.interaction_step(torch.from_numpy(state)[np.newaxis, ...].to(self.device))
+            action, logpa = self.interaction_step(torch.from_numpy(state)[np.newaxis, ...].to(self.device))
             next_state, reward, done, info = self.env.step(action)
             next_state = next_state.__array__()
-            self.optimize_model(state, reward, next_state, action, done)
+            self.optimize_model(state, reward, next_state, action, done, logpa)
             
             state = next_state
             self.rewards.append(reward)
@@ -141,7 +146,13 @@ class AC():
                 break
             
         self.reward_history.append(np.sum(self.rewards))
+        self.exploratory_history.append(np.mean(self.exploratory))
+        
         self.epochs_completed += 1
         
         if self.epochs_completed > 30 and self.epochs_completed % 10 == 0:
-            runing_bar.set_postfix(reward=np.mean(self.reward_history[self.epochs_completed-30:self.epochs_completed]),)
+            runing_bar.set_postfix(reward=np.mean(self.reward_history[self.epochs_completed-30:self.epochs_completed]),
+                                   exploratory=np.mean(self.exploratory_history[self.epochs_completed-30:self.epochs_completed]),
+                                   p_loss=np.mean(self.policy_loss),
+                                   c_loss=np.mean(self.critic_loss),
+                                   )
