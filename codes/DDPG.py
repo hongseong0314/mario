@@ -63,6 +63,7 @@ class DDPG():
         self.critic_optimizer_lr = cfg.model.critic_optimizer_lr
 
         self.replay_buffer_fn=cfg.model.replay_buffer_fn
+        self.action_fn = cfg.model.action_fn
         
         self.nS = cfg.model.nS  
         self.nA = cfg.model.nA
