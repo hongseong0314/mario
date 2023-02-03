@@ -11,7 +11,7 @@ from codes.utills import create_directory
 
 def trainer(name):
     if name == 'DQN':
-        from codes.dqn import Qnet, DQN
+        from codes.models.dqn import Qnet, DQN
         cfg = dqn_config()
         cfg.model.batch_size = 32 
         cfg.model.training_strategy_fn = lambda: EGreedyLinearStrategy(init_epsilon=1.0,
@@ -49,7 +49,7 @@ def trainer(name):
             pickle.dump(history,f)
     
     elif name == 'REINFORCE':
-        from codes.reinforce import policy_net, REINFORCE
+        from codes.models.reinforce import policy_net, REINFORCE
         cfg = rein_config()
         cfg.model.policy_model_fn = lambda nS, nA : policy_net(nS, nA)
         cfg.model.policy_optimizer_fn = lambda net, lr: torch.optim.Adam(net.parameters(), lr=lr)
@@ -75,7 +75,7 @@ def trainer(name):
             pickle.dump(history,f)
     
     elif name == 'AC':
-        from codes.AC import critic_net, policy_net, AC
+        from codes.models.AC import critic_net, policy_net, AC
         cfg = ac_config()
         cfg.model.policy_model_fn = lambda nS, nA : policy_net(nS, nA)
         cfg.model.policy_optimizer_fn = lambda net, lr: torch.optim.Adam(net.parameters(), lr=lr)
@@ -102,7 +102,7 @@ def trainer(name):
             pickle.dump(history,f)
     
     elif name == 'ddpg':
-        from codes.DDPG import policy_net, critic_net, DDPG
+        from codes.models.DDPG import policy_net, critic_net, DDPG
         cfg = ddpg_config()
 
         cfg.model.training_strategy_fn = GreedyStrategy
@@ -135,7 +135,7 @@ def trainer(name):
             pickle.dump(history,f)
 
     elif name == 'ppo':
-        from codes.ppo import policy_net, critic_net, PPO
+        from codes.models.ppo import policy_net, critic_net, PPO
         cfg = ppo_config()
         cfg.model.policy_model_fn = lambda nS, nA : policy_net(nS, nA)
         cfg.model.policy_optimizer_fn = lambda net, lr: torch.optim.Adam(net.parameters(), lr=lr)
